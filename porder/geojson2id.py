@@ -119,7 +119,7 @@ def handle_page(page,asset,num,outfile,gmain,ovp):
         except Exception as e:
             print(e)
 
-def idl(infile,start,end,item,asset,num,cmin,cmax,outfile,ovp):
+def idl(infile,start,end,item,sat,asset,num,cmin,cmax,outfile,ovp):
     [head,tail]=os.path.split(outfile)
     if cmin==None:
         cmin=0
@@ -153,7 +153,8 @@ def idl(infile,start,end,item,asset,num,cmin,cmax,outfile,ovp):
         print('Could not parse geometry')
         print(e)
 ## Null payload structure
-    data = {'filter': {'type': 'AndFilter',
+    if sat==None:
+        data = {'filter': {'type': 'AndFilter',
             'config': [{'type': 'GeometryFilter', 'field_name': 'geometry',
             'config': {'type': 'Polygon', 'coordinates': []}},
             {'type': 'OrFilter', 'config': [{'type': 'AndFilter',
@@ -167,23 +168,52 @@ def idl(infile,start,end,item,asset,num,cmin,cmax,outfile,ovp):
             , 'config': {'gte': [],
             'lte': []}}]}]},
             'item_types': []}
+        data['filter']['config'][0]['config']['coordinates'] = aoi_geom
+        data['filter']['config'][2]['config'][0]['config']['gte'] = str(start)+'T04:00:00.000Z'
+        data['filter']['config'][2]['config'][0]['config']['lte'] = str(end)+'T03:59:59.999Z'
+        data['filter']['config'][1]['config'][0]['config'][2]['config']['gte'] = float(cmin)
+        data['filter']['config'][1]['config'][0]['config'][2]['config']['lte'] = float(cmax)
+        data['filter']['config'][1]['config'][0]['config'][0]['config'] = [item]
+        data['item_types'] = [item]
+        data = str(data).replace("'", '"')
+        temp['coordinates']=aoi_geom
+        gmain=shape(temp)
+    else:
+        data = {'filter': {'type': 'AndFilter',
+            'config': [{'type': 'GeometryFilter', 'field_name': 'geometry',
+            'config': {'type': 'Polygon', 'coordinates': []}},
+            {'type': 'OrFilter', 'config': [{'type': 'AndFilter',
+            'config': [{'type': 'StringInFilter', 'field_name': 'item_type'
+            , 'config': []},{'type': 'StringInFilter', 'field_name': 'satellite_id'
+            , 'config': []}, {'type': 'RangeFilter',
+            'field_name': 'cloud_cover', 'config': {'gte': [],
+            'lte': []}}, {'type': 'RangeFilter',
+            'field_name': 'sun_elevation', 'config': {'gte': 0,
+            'lte': 90}}]}]}, {'type': 'OrFilter',
+            'config': [{'type': 'DateRangeFilter', 'field_name': 'acquired'
+            , 'config': {'gte': [],
+            'lte': []}}]}]},
+            'item_types': []}
+    #print(data)
 ## Configure search payload
-    data['filter']['config'][0]['config']['coordinates'] = aoi_geom
-    data['filter']['config'][2]['config'][0]['config']['gte'] = str(start)+'T04:00:00.000Z'
-    data['filter']['config'][2]['config'][0]['config']['lte'] = str(end)+'T03:59:59.999Z'
-    data['filter']['config'][1]['config'][0]['config'][1]['config']['gte'] = float(cmin)
-    data['filter']['config'][1]['config'][0]['config'][1]['config']['lte'] = float(cmax)
-    data['filter']['config'][1]['config'][0]['config'][0]['config'] = [item]
-    data['item_types'] = [item]
-    data = str(data).replace("'", '"')
-    temp['coordinates']=aoi_geom
-    gmain=shape(temp)
+        data['filter']['config'][0]['config']['coordinates'] = aoi_geom
+        data['filter']['config'][2]['config'][0]['config']['gte'] = str(start)+'T04:00:00.000Z'
+        data['filter']['config'][2]['config'][0]['config']['lte'] = str(end)+'T03:59:59.999Z'
+        data['filter']['config'][1]['config'][0]['config'][2]['config']['gte'] = float(cmin)
+        data['filter']['config'][1]['config'][0]['config'][2]['config']['lte'] = float(cmax)
+        data['filter']['config'][1]['config'][0]['config'][1]['config'] = sat
+        data['filter']['config'][1]['config'][0]['config'][0]['config'] = [item]
+        data['item_types'] = [item]
+        data = str(data).replace("'", '"')
+        temp['coordinates']=aoi_geom
+        gmain=shape(temp)
 ## Send post request
     querystring = {"strict":"true"}
     result = requests.post('https://api.planet.com/data/v1/quick-search',
                            headers=headers, data=data, params=querystring,
                            auth=(PL_API_KEY, ''))
     page=result.json()
+    #print(page)
     final_list = handle_page(page,asset,num,outfile,gmain,ovp)
     while page['_links'].get('_next') is not None:
         page_url = page['_links'].get('_next')
