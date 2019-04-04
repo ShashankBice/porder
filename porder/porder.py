@@ -31,10 +31,10 @@ from .order_size import ordersize
 from .downloader import download
 from .diffcheck import checker
 from .async_downloader import asyncdownload
-os.chdir(os.path.dirname(os.path.realpath(__file__)))
-lpath=os.path.dirname(os.path.realpath(__file__))
-sys.path.append(lpath)
-
+#os.chdir(os.path.dirname(os.path.realpath(__file__)))
+#lpath=os.path.dirname(os.path.realpath(__file__))
+#sys.path.append(lpath)
+#print(lpath)
 
 #Get quota for your account
 def planet_quota():
@@ -59,7 +59,7 @@ def gcs_cred_from_parser(args):
 
 #Create ID List with structured JSON
 def idlist_from_parser(args):
-    idl(infile=args.input,
+    idl(infile=os.path.abspath(args.input),
         start=args.start,
         end=args.end,
         item=args.item,
@@ -67,12 +67,13 @@ def idlist_from_parser(args):
         num=args.number,
         cmin=args.cmin,
         cmax=args.cmax,
+        sat=args.sat,
         ovp=args.overlap,
         outfile=args.outfile)
 
 #Check difference from local filelist
 def difflist_from_parser(args):
-    checker(folder=args.folder,typ=args.typ,infile=args.input,
+    checker(folder=args.folder,typ=args.typ,infile=os.path.abspath(args.input),
     item=args.item,asset=args.asset,start=args.start,end=args.end,
     cmin=args.cmin,cmax=args.cmax,outfile=args.outfile)
 
@@ -151,6 +152,7 @@ def main(args=None):
     optional_named = parser_idlist.add_argument_group('Optional named arguments')
     optional_named.add_argument('--cmin', help="Minimum cloud cover", default=None)
     optional_named.add_argument('--cmax', help="Maximum cloud cover", default=None)
+    optional_named.add_argument('--sat', nargs='*',help="Satellite id list", default=None)
     optional_named.add_argument('--overlap', help="Percentage overlap of image with search area range between 0 to 100", default=None)
     parser_idlist.set_defaults(func=idlist_from_parser)
 
