@@ -32,14 +32,14 @@ from .downloader import download
 from .diffcheck import checker
 from .async_downloader import asyncdownload
 #os.chdir(os.path.dirname(os.path.realpath(__file__)))
-#lpath=os.path.dirname(os.path.realpath(__file__))
+lpath=os.path.dirname(os.path.realpath(__file__))
 #sys.path.append(lpath)
 #print(lpath)
 
 #Get quota for your account
 def planet_quota():
     try:
-        subprocess.call('python planet_quota.py',shell=True)
+        subprocess.call(os.path.join(lpath,'planet_quota.py'),shell=True)
     except Exception as e:
         print(e)
 def planet_quota_from_parser(args):
