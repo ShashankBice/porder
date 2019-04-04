@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 __copyright__ = """
 
     Copyright 2019 Samapriya Roy
